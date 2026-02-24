@@ -1,26 +1,56 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 
+
 def index(request):
-    params = {'name': 'Sherry', 'place': 'Earth'}
-    return render(request, 'index.html', params)
+    return render(request, 'index.html')
 
 
-def removepunc(request):
-    return HttpResponse("<h1>Removed Punctuation</h1> <a href='/'>Back</a>")
+def analyze(request):
 
+    if request.method != "POST":
+        return HttpResponse("Invalid request method")
 
-def capfirst(request):
-    return HttpResponse("<h1>Capitalized First Letter</h1> <a href='/'>Back</a>")
+    text = request.POST.get('text', '').strip()
 
+    if not text:
+        return HttpResponse("Please enter some text")
 
-def newlineremove(request):
-    return HttpResponse("<h1>New Line Removed</h1> <a href='/'>Back</a>")
+    remove_punc = request.POST.get('removepunc')
+    fullcaps = request.POST.get('fullcaps')
+    newlineremover = request.POST.get('newlineremover')
+    extraspaceremover = request.POST.get('extraspaceremover')
 
+    analyzed = text
+    operations = []
 
-def spaceremove(request):
-    return HttpResponse("<h1>Extra Spaces Removed</h1> <a href='/'>Back</a>")
+    # 1️⃣ Remove punctuation
+    if remove_punc == "on":
+        punctuations = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
+        analyzed = ''.join(char for char in analyzed if char not in punctuations)
+        operations.append("Removed Punctuation")
 
+    # 2️⃣ Uppercase
+    if fullcaps == "on":
+        analyzed = analyzed.upper()
+        operations.append("Converted to Uppercase")
 
-def charcount(request):
-    return HttpResponse("<h1>Character Counted</h1> <a href='/'>Back</a>")
+    # 3️⃣ Remove new lines
+    if newlineremover == "on":
+        analyzed = analyzed.replace("\n", "").replace("\r", "")
+        operations.append("Removed New Lines")
+
+    # 4️⃣ Remove extra spaces
+    if extraspaceremover == "on":
+        analyzed = " ".join(analyzed.split())
+        operations.append("Removed Extra Spaces")
+
+    if not operations:
+        return HttpResponse("Please select at least one operation")
+
+    context = {
+        "purpose": ", ".join(operations),
+        "analyzed_text": analyzed
+    }
+
+    return render(request, 'analyze.html', context)
